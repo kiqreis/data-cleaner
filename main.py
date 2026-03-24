@@ -27,39 +27,6 @@ with open("data.csv", "w+", encoding="utf-8") as f:
     df.to_csv("data.csv", index=False)
 
 
-def normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
-    df.columns = (
-        df.columns.str.strip()
-        .str.lower()
-        .map(unidecode)
-        .str.replace(r"[^a-z0-9]+", "_", regex=True)
-        .str.strip("_")
-    )
-
-    return df
-
-
-def strip_str(df: pd.DataFrame) -> pd.DataFrame:
-    for column in df.select_dtypes(include="str"):
-        df[column] = df[column].astype(str).str.strip()
-
-    return df
-
-
-def drop_duplicates(df: pd.DataFrame) -> pd.DataFrame:
-    return df.drop_duplicates()
-
-
-def coerce_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
-    for column in df.columns:
-        converted = pd.to_numeric(df[column], errors="coerce")
-
-        if converted.notna().sum() > 0:
-            df[column] = converted
-
-    return df
-
-
 def load_and_clean(filepath: str) -> pd.DataFrame:
     df = pd.read_csv(filepath)
 
