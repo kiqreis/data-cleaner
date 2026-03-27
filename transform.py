@@ -6,14 +6,6 @@ from unidecode import unidecode
 def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    # df.columns = (
-    #     df.columns.str.strip()
-    #     .str.lower()
-    #     .map(unidecode)
-    #     .str.replace(r"[^a-z0-9]+", "_", regex=True)
-    #     .str.strip("_")
-    # )
-
     df.columns = df.columns.map(
         lambda column: inflection.underscore(unidecode(column).strip())
     )
