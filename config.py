@@ -44,13 +44,13 @@ class PipelineConfig:
     outliers_strategy: OutlierStrategy | str = OutlierStrategy.CLIP
     zscore_threshold: float = 3.0
     iqr_factor: float = 1.5
-    schema: Any = None
+    input_schema: Any = None
+    output_schema: Any = None
 
     def __post_init__(self) -> None:
         self.imputation_strategy = ImputationStrategy(self.imputation_strategy)
         self.outliers_method = OutlierMethod(self.outliers_method)
         self.outliers_strategy = OutlierStrategy(self.outliers_strategy)
-
         self._validate()
 
     def _validate(self) -> None:
