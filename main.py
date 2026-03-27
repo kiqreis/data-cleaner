@@ -1,49 +1,100 @@
-from faker import Faker
-from unidecode import unidecode
-import pandas as pd
-import random
+import argparse
+
+from config import (
+    PipelineConfig,
+    ImputationStrategy,
+    OutlierStrategy,
+    OutlierMethod,
+)
+from pipeline import run_pipeline
+from report import build_diagnostic_report
+from file_io import load_csv, save_csv
 
 
-fake = Faker("pt_BR")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="data_cleaner — CSV data cleaning pipeline",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--input", required=True, help="Path to input CSV")
+    parser.add_argument("--output", required=True, help="Path to output CSV")
+    parser.add_argument(
+        "--imputation",
+        default="median",
+        choices=[s.value for s in ImputationStrategy],
+        help="Null imputation strategy",
+    )
+    parser.add_argument(
+        "--outlier-strategy",
+        default="clip",
+        choices=[s.value for s in OutlierStrategy],
+        dest="outlier_strategy",
+        help="How to handle outliers",
+    )
+    parser.add_argument(
+        "--outlier-method",
+        default="iqr",
+        choices=[m.value for m in OutlierMethod],
+        dest="outlier_method",
+        help="Outlier detection method",
+    )
+    parser.add_argument(
+        "--no-duplicates",
+        action="store_false",
+        dest="remove_duplicates",
+        help="Disables duplicate removal",
+    )
+    parser.add_argument(
+        "--no-trim",
+        action="store_false",
+        dest="trim_strings",
+        help="Disables string trimming",
+    )
+    parser.add_argument(
+        "--diagnostic",
+        action="store_true",
+        help="Display diagnostic report before and after",
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        dest="log_level",
+    )
+    return parser.parse_args()
 
 
-data = [
-    {
-        "FirstName": fake.first_name(),
-        "LastName": fake.last_name(),
-        "Salary": round(random.uniform(1_621, 50_000), 2),
-        "Occupation": fake.job(),
-        "Email": fake.free_email(),
-        "PhoneNumber": fake.phone_number(),
-        "Address": fake.address().replace("\n", ", "),
-        "DateOfBirth": fake.date_of_birth(minimum_age=18, maximum_age=65),
-    }
-    for _ in range(1_000)
-]
+def main() -> None:
+    args = parse_args()
 
-
-with open("data.csv", "w+", encoding="utf-8") as f:
-    df = pd.DataFrame(data)
-    df.to_csv("data.csv", index=False)
-
-
-def load_and_clean(filepath: str) -> pd.DataFrame:
-    df = pd.read_csv(filepath)
-
-    df = (
-        df.pipe(normalize_column_names)
-        .pipe(strip_str)
-        .pipe(drop_duplicates)
-        .pipe(coerce_numeric_columns)
+    config = PipelineConfig(
+        imputation_strategy=args.imputation,
+        outliers_strategy=args.outlier_strategy,
+        outliers_method=args.outlier_method,
+        drop_duplicates=args.remove_duplicates,
+        str_strip=args.trim_strings,
     )
 
-    return df
+    df = load_csv(args.input)
 
+    if args.diagnostic:
+        before = build_diagnostic_report(df)
+        print(
+            f"\n[BEFORE] shape={before.shape}  nulls={before.total_null_cells}"
+            f"  duplicates={before.duplicated_rows}"
+        )
 
-def main():
-    df = load_and_clean("data.csv")
+    df_clean, report = run_pipeline(df, config)
+    print(report.summary())
 
-    print(df.head(n=20))
+    if args.diagnostic:
+        after = build_diagnostic_report(df_clean)
+        print(
+            f"[AFTER]  shape={after.shape}  nulls={after.total_null_cells}"
+            f"  duplicates={after.duplicated_rows}\n"
+        )
+
+    save_csv(df_clean, args.output)
 
 
 if __name__ == "__main__":
