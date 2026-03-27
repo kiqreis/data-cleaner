@@ -18,8 +18,9 @@ def handle_outliers(
         return df, {}
 
     df = df.copy()
+
     num_columns = df.select_dtypes(include="number").columns
-    outliers_treated = dict[str, int] = {}
+    outliers_treated: dict[str, int] = {}
     keep_mask = pd.Series(True, index=df.index)
 
     for column in num_columns:
@@ -52,7 +53,10 @@ def handle_outliers(
 
 
 def _compute_bounds(
-    series: pd.Series, method: OutlierMethod, iqr_factor: float, zscore_threshold: float
+    series: pd.Series,
+    method: OutlierMethod,
+    iqr_factor: float,
+    zscore_threshold: float,
 ) -> tuple[float, float]:
     if method == OutlierMethod.IQR:
         q1, q3 = series.quantile(0.25), series.quantile(0.75)
@@ -62,14 +66,12 @@ def _compute_bounds(
     if method == OutlierMethod.ZSCORE:
         mean, std = series.mean(), series.std()
         d = zscore_threshold * std
-
         return mean - d, mean + d
 
     if method == OutlierMethod.MODIFIED:
         median = series.median()
         mad = np.median(np.abs(series - median))
         bound = zscore_threshold * mad / 0.6745
-
         return median - bound, median + bound
 
     raise ValueError(f"Unknown outlier method: {method!r}")
