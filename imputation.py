@@ -39,7 +39,7 @@ def fit_imputation(
 def apply_imputation(
     df: pd.DataFrame,
     strategy: ImputationStrategy,
-    learned_values: list[str] | None = None,
+    learned_values: dict | None = None,
     columns: list[str] | None = None,
     fill_value: Any = None,
 ):
@@ -56,7 +56,6 @@ def apply_imputation(
 
     if strategy == ImputationStrategy.DROP:
         df = df.dropna()
-
         return df
 
     if strategy == ImputationStrategy.FFILL:
@@ -68,7 +67,6 @@ def apply_imputation(
     else:
         for column in num_columns:
             value = _compute_fill(df[column], strategy, fill_value)
-
             if value is not None:
                 df[column] = df[column].fillna(value)
 
@@ -88,7 +86,6 @@ def _compute_fill(
         return series.median()
     if strategy == ImputationStrategy.MODE:
         mode = series.mode(dropna=True)
-
         return mode.iloc[0] if not mode.empty else None
     if strategy == ImputationStrategy.ZERO:
         return 0
