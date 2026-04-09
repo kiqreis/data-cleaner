@@ -1,17 +1,48 @@
 [project]
 name = "data-cleaner"
 version = "0.1.0"
-description = "Add your description here"
+description = "Modular data cleaning pipeline with Streamlit Web UI and CLI"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
-
 dependencies = [
-    "faker>=24.0.0,<50.0.0",
     "pandas>=2.2.0,<3.0.0",
     "pandera>=0.18.0,<0.31.0",
     "streamlit>=1.32.0,<2.0.0",
-    "altair>=4.2.2,<5.0.0",
+    "altair>=4.2.2",
     "unidecode>=1.3.0,<2.0.0",
     "openpyxl>=3.1.5",
     "inflection>=0.5.1",
 ]
+
+[dependency-groups]
+dev = [
+    "faker>=24.0.0,<50.0.0",
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff-specific
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
