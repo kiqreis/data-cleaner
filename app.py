@@ -1,16 +1,10 @@
 import io
-import streamlit as st
+
 import pandas as pd
+import streamlit as st
 
-from pipeline import run_pipeline
-from report import build_diagnostic_report
-
-from config import (
-    PipelineConfig,
-    ImputationStrategy,
-    OutlierMethod,
-    OutlierStrategy,
-)
+from src.core import ImputationStrategy, OutlierMethod, OutlierStrategy, PipelineConfig
+from src.core.pipeline import run_pipeline
 
 st.set_page_config(
     page_title="Spreadsheet Cleaner",
@@ -30,7 +24,6 @@ if not file:
 @st.cache_data(show_spinner="Loading file...")
 def load_file(data: bytes, name: str) -> pd.DataFrame:
     buffer = io.BytesIO(data)
-
     return pd.read_csv(buffer) if name.endswith(".csv") else pd.read_excel(buffer)
 
 
@@ -49,7 +42,7 @@ with st.sidebar:
     subset_cols: list[str] | None = None
 
     if do_duplicates:
-        options = ["[all columns]"] + list(df_raw.columns)
+        options = ["[all columns]", *list(df_raw.columns)]
         chosen = st.multiselect("Duplicate subset", options, default=["[all columns]"])
 
         if "[all columns]" not in chosen and chosen:
