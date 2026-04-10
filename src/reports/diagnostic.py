@@ -1,0 +1,108 @@
+from dataclasses import dataclass
+from typing import Any
+
+import pandas as pd
+
+
+@dataclass
+class DiagnosticReport:
+    """Detailed statistical snapshot of a DataFrame before/after cleaning"""
+
+    shape: tuple[int, int]
+    duplicated_rows: int
+    duplicated_pct: float
+    null_count: dict[str, int]
+    null_pct: dict[str, float]
+    total_null_cells: int
+    unique_values: dict[str, int]
+    constant_columns: list[str]
+    dtypes: dict[str, str]
+    blank_strings: dict[str, int]
+    numeric_summary: dict[str, Any]
+    skewness: dict[str, float]
+    kurtosis: dict[str, float]
+    outliers_iqr: dict[str, int]
+    outliers_zscore: dict[str, int]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "shape": self.shape,
+            "duplicates": {
+                "count": self.duplicated_rows,
+                "pct": self.duplicated_pct,
+            },
+            "nulls": {
+                "total_cells": self.total_null_cells,
+                "by_column": self.null_count,
+                "pct_by_column": self.null_pct,
+            },
+            "cardinality": {
+                "unique_values": self.unique_values,
+                "constant_columns": self.constant_columns,
+            },
+            "dtypes": self.dtypes,
+            "blank_strings": self.blank_strings,
+            "numeric": {
+                "summary": self.numeric_summary,
+                "skewness": self.skewness,
+                "kurtosis": self.kurtosis,
+            },
+            "outliers": {
+                "iqr": self.outliers_iqr,
+                "zscore": self.outliers_zscore,
+            },
+        }
+
+    def summary(self) -> dict[str, Any]:
+        return self.to_dict()
+
+
+def build_diagnostic_report(df: pd.DataFrame) -> DiagnosticReport:
+    """Create a comprehensive diagnostic report for a DataFrame"""
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Expected pd.DataFrame, received {type(df).__name__!r}")
+
+    num_df = df.select_dtypes(include="number")
+    obj_cols = df.select_dtypes(include="object").columns
+    dup = df.duplicated()
+
+    outliers_iqr: dict[str, int] = {}
+    outliers_zscore: dict[str, int] = {}
+
+    for col in num_df.columns:
+        series = num_df[col].dropna()
+        q1, q3 = series.quantile(0.25), series.quantile(0.75)
+        iqr = q3 - q1
+        outliers_iqr[col] = int(
+            ((num_df[col] < q1 - 1.5 * iqr) | (num_df[col] > q3 + 1.5 * iqr)).sum()
+        )
+        std = series.std()
+        if std > 0:
+            z = (num_df[col] - series.mean()) / std
+            outliers_zscore[col] = int((z.abs() > 3).sum())
+        else:
+            outliers_zscore[col] = 0
+
+    blank_strings = {
+        col: int(df[col].dropna().str.strip().eq("").sum()) for col in obj_cols
+    }
+
+    return DiagnosticReport(
+        shape=df.shape,
+        duplicated_rows=int(dup.sum()),
+        duplicated_pct=round(float(dup.mean()) * 100, 2),
+        null_count=df.isnull().sum().to_dict(),
+        null_pct=(df.isnull().mean() * 100).round(2).to_dict(),
+        total_null_cells=int(df.isnull().sum().sum()),
+        unique_values=df.nunique().to_dict(),
+        constant_columns=[c for c in df.columns if df[c].nunique(dropna=False) <= 1],
+        dtypes=df.dtypes.astype(str).to_dict(),
+        blank_strings=blank_strings,
+        numeric_summary=(
+            num_df.describe().round(4).to_dict() if not num_df.empty else {}
+        ),
+        skewness=num_df.skew().round(4).to_dict(),
+        kurtosis=num_df.kurtosis().round(4).to_dict(),
+        outliers_iqr=outliers_iqr,
+        outliers_zscore=outliers_zscore,
+    )
