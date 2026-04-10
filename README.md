@@ -1,18 +1,8 @@
-# 🧹 Data Cleaner
+# Data Cleaner
 
-A modular data cleaning pipeline with both a **Streamlit web UI** and a **CLI interface**.  
-Upload any CSV or Excel file, configure the cleaning steps, and download the result instantly.
+A modular data cleaning pipeline with both a Streamlit web interface and a command-line tool. Upload any CSV or Excel file, configure the cleaning steps, and download the result.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-latest-red?logo=streamlit)
-![Pandas](https://img.shields.io/badge/Pandas-latest-150458?logo=pandas)
-![uv](https://img.shields.io/badge/uv-package%20manager-blueviolet)
-![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)
-![License](https://img.shields.io/badge/License-MIT-green)
-
----
-
-## ✨ Features
+## Features
 
 - **Column normalization** — strips accents, lowercases and snake_cases all column names
 - **Type inference** — automatically detects and converts numeric, datetime and category columns
@@ -25,214 +15,169 @@ Upload any CSV or Excel file, configure the cleaning steps, and download the res
 - **Cleaning report** — summary of every change made during the pipeline run
 - **Export** — download the cleaned data as CSV or Excel
 
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```text
-data_cleaner/
-├── app.py            # Streamlit Web UI
-├── main.py           # Entry point
-├── pipeline.py       # Central pipeline orchestration
-├── config.py         # Enums and PipelineConfig dataclass
-├── transform.py      # Column normalization, type inference, deduplication
-├── imputation.py     # Missing-value imputation strategies
-├── outlier.py        # Outlier detection and treatment
-├── report.py         # CleaningReport and DiagnosticReport
-├── schema.py         # Pandera schema validation wrapper
-├── file_io.py        # File loading and saving helpers
-├── pyproject.toml    # Project metadata and dependencies (uv)
-├── Dockerfile        # Docker image definition
-└── .dockerignore     # Files excluded from Docker build
+src/
+├── core/
+│   ├── config.py         # PipelineConfig dataclass
+│   ├── enums.py          # ImputationStrategy, OutlierMethod, OutlierStrategy
+│   ├── pipeline.py       # Central orchestration
+│   └── schema.py         # Pandera schema validation
+├── transforms/
+│   ├── columns.py        # Column name normalization, string stripping
+│   ├── dtypes.py         # Type inference and casting
+│   ├── deduplicate.py    # Duplicate row removal
+│   ├── imputation.py     # Missing-value strategies
+│   └── outliers.py       # Outlier detection and treatment
+├── io/
+│   └── file_io.py        # CSV and Excel load/save helpers
+├── reports/
+│   ├── cleaning.py       # CleaningReport
+│   └── diagnostic.py     # DiagnosticReport
+└── cli/
+    └── main.py           # CLI entry point with argparse
+
+app.py                    # Streamlit web interface
+pyproject.toml            # Project metadata and dependencies
+Dockerfile                # Container image definition
 ```
 
----
+## Getting Started
 
-## 🚀 Getting Started (uv recommended)
+The project uses [uv](https://docs.astral.sh/uv/) for dependency management. Install it first:
 
-### 1. Install uv
-
-**Windows (PowerShell):**
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-**macOS / Linux:**
 ```bash
+# macOS / Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
-```
 
-**Alternative methods:**
-```bash
-# Homebrew (macOS/Linux)
-brew install uv
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# WinGet (Windows)
-winget install --id=astral-sh.uv -e
-
-# pip (any platform)
+# Or via pip
 pip install uv
 ```
 
-### 2. Clone and set up the project
+Clone the repository and install dependencies:
 
 ```bash
 git clone https://github.com/kiqreis/data-cleaner.git
 cd data-cleaner
-```
-
-### 3. Install dependencies
-
-Managed via `pyproject.toml` and locked in `uv.lock`.
-
-```toml
-[project]
-name = "data-cleaner"
-version = "0.1.0"
-requires-python = ">=3.10"
-dependencies = [
-    "streamlit",
-    "pandas",
-    "numpy",
-    "openpyxl",
-    "unidecode",
-    "pandera",
-    "python-dateutil",
-]
-```
-
-Install with:
-
-```bash
 uv sync
 ```
 
-### 4. Run the app
+### Run the web interface
 
 ```bash
 uv run streamlit run app.py
 ```
 
-Open [http://localhost:8501](http://localhost:8501) in your browser.
+Then open http://localhost:8501 in your browser.
 
-### 5. Run the CLI
+### Run the CLI
 
 ```bash
-uv run python main.py --input data/raw.csv --output data/clean.csv
+uv run python -m src --input data/raw.csv --output data/clean.csv
 ```
 
----
+The CLI accepts both CSV and Excel files for input and output — it detects the format from the file extension.
 
-## 🐳 Running with Docker
+## Using Docker
 
-No need to install Python or uv locally. Use Docker.
-
-### Build the image
+Build the image:
 
 ```bash
 docker build -t data-cleaner .
 ```
 
-### Run the container
+Run the web interface:
 
 ```bash
 docker run -p 8501:8501 data-cleaner
 ```
 
-Open [http://localhost:8501](http://localhost:8501) in your browser.
-
-### Run with a local data folder mounted (CLI)
+Run the CLI with a local data directory mounted:
 
 ```bash
 docker run --rm \
   -v $(pwd)/data:/app/data \
   data-cleaner \
-  uv run python main.py --input data/raw.csv --output data/clean.csv
+  uv run python -m src --input data/raw.csv --output data/clean.csv
 ```
 
----
+## How It Works
 
-## 🖥️ Web UI — Usage
+The pipeline applies a series of transformations in order:
 
-1. Upload a `.csv` or `.xlsx` file
-2. Configure the cleaning options in the sidebar:
-   - Toggle column normalization, deduplication, type inference
-   - Choose a null imputation strategy
-   - Optionally enable outlier detection and choose method + action
-3. Click **▶️ Run cleaning**
-4. Review results in the **Clean Data** and **Report** tabs
-5. Download the cleaned dataset as CSV or Excel
+1. **Schema validation** — optional Pandera check before cleaning
+2. **Column normalization** — snake_case and accent removal
+3. **Type inference** — detects numeric, datetime and category columns
+4. **String stripping** — trims whitespace from text columns
+5. **Deduplication** — removes duplicate rows
+6. **Null imputation** — fills missing values using the chosen strategy
+7. **Outlier handling** — detects and treats outliers
+8. **Schema validation** — optional Pandera check after cleaning
 
----
+Each step can be toggled on or off through the `PipelineConfig` dataclass, either programmatically or via the CLI flags.
 
-## ⌨️ CLI Options
+## CLI Options
 
-```text
-usage: main.py --input INPUT --output OUTPUT [options]
+```
+usage: python -m src --input INPUT --output OUTPUT [options]
 
 options:
-  --input INPUT             Path to input CSV (required)
-  --output OUTPUT           Path to output CSV (required)
-  --imputation STRATEGY     Null imputation strategy (default: median)
+  --input INPUT             Path to input file (CSV or Excel)
+  --output OUTPUT           Path to output file (CSV or Excel)
+  --imputation STRATEGY     Null imputation (default: median)
                             choices: drop, mean, median, mode, zero, ffill, bfill, value
-  --outlier-strategy ACTION How to handle outliers (default: clip)
+  --outlier-strategy ACTION Outlier handling (default: clip)
                             choices: remove, clip, flag, none
-  --outlier-method METHOD   Outlier detection method (default: iqr)
+  --outlier-method METHOD   Outlier detection (default: iqr)
                             choices: iqr, zscore, modified_zscore
   --no-duplicates           Disable duplicate removal
   --no-trim                 Disable string trimming
-  --diagnostic              Print a diagnostic report before and after cleaning
+  --diagnostic              Print a diagnostic report before and after
   --log-level LEVEL         Logging verbosity (default: INFO)
-                            choices: DEBUG, INFO, WARNING, ERROR
+  --version                 Show version and exit
 ```
 
 ### Examples
 
+Basic cleaning with default settings:
+
 ```bash
-# Basic cleaning with default settings
-uv run python main.py --input raw.csv --output clean.csv
+uv run python -m src --input raw.csv --output clean.csv
+```
 
-# Median imputation + remove outliers via Z-score
-uv run python main.py --input raw.csv --output clean.csv \
+Median imputation with Z-score outlier removal:
+
+```bash
+uv run python -m src --input raw.csv --output clean.csv \
   --imputation median --outlier-method zscore --outlier-strategy remove
+```
 
-# Full diagnostic report, debug logging
-uv run python main.py --input raw.csv --output clean.csv \
+Full diagnostic report with debug logging:
+
+```bash
+uv run python -m src --input raw.csv --output clean.csv \
   --diagnostic --no-duplicates --log-level DEBUG
 ```
 
----
+## Using as a Library
 
-## ⚙️ Configuration Reference
+The project can also be imported as a Python library:
 
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `normalize_column_names` | `bool` | `True` | Snake_case + remove accents from column names |
-| `str_strip` | `bool` | `True` | Strip whitespace from string columns |
-| `drop_duplicates` | `bool` | `True` | Remove duplicate rows |
-| `duplicate_subset` | `list[str] \| None` | `None` | Columns to consider for deduplication |
-| `infer_dtypes` | `bool` | `True` | Auto-convert string columns to numeric/datetime/category |
-| `min_numeric_ratio` | `float` | `0.9` | Min proportion of parseable values to convert to numeric |
-| `min_datetime_ratio` | `float` | `0.8` | Min proportion to convert to datetime |
-| `max_category_ratio` | `float` | `0.05` | Max unique-value ratio to convert to category |
-| `imputation_strategy` | `ImputationStrategy` | `MEDIAN` | How to fill null values |
-| `imputation_fill_value` | `Any` | `None` | Required when strategy is `VALUE` |
-| `imputation_columns` | `list[str] \| None` | `None` | Restrict imputation to specific columns |
-| `outliers_method` | `OutlierMethod` | `IQR` | Detection method |
-| `outliers_strategy` | `OutlierStrategy` | `CLIP` | Action on detected outliers |
-| `zscore_threshold` | `float` | `3.0` | Threshold for Z-score methods |
-| `iqr_factor` | `float` | `1.5` | IQR multiplier for bounds calculation |
-| `input_schema` | `Any` | `None` | Optional Pandera schema validated before pipeline |
-| `output_schema` | `Any` | `None` | Optional Pandera schema validated after pipeline |
+```python
+from src import PipelineConfig, run_pipeline, load_csv
 
----
+df = load_csv("data/raw.csv")
+config = PipelineConfig(imputation_strategy="median", drop_duplicates=True)
+df_clean, report = run_pipeline(df, config)
+print(report.summary())
+```
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License.
-
-```text
 MIT License
 
 Copyright (c) 2026 Kaique Reis
-```
