@@ -4,16 +4,16 @@ A modular data cleaning pipeline with both a Streamlit web interface and a comma
 
 ## Features
 
-- **Column normalization** — strips accents, lowercases and snake_cases all column names
-- **Type inference** — automatically detects and converts numeric, datetime and category columns
-- **String cleaning** — trims leading/trailing whitespace from text columns
-- **Duplicate removal** — drop duplicate rows globally or by a custom column subset
-- **Null imputation** — mean, median, mode, zero, forward fill, backward fill or a custom value
-- **Outlier handling** — detect via IQR, Z-score or Modified Z-score; remove, clip or flag
-- **Schema validation** — optional pre/post pipeline validation with Pandera
-- **Diagnostic report** — detailed stats before cleaning
-- **Cleaning report** — summary of every change made during the pipeline run
-- **Export** — download the cleaned data as CSV or Excel
+- **Column normalization**: strips accents, lowercases and snake_cases all column names
+- **Type inference**: automatically detects and converts numeric, datetime and category columns
+- **String cleaning**: trims leading/trailing whitespace from text columns
+- **Duplicate removal**: drop duplicate rows globally or by a custom column subset
+- **Null imputation**: mean, median, mode, zero, forward fill, backward fill or a custom value
+- **Outlier handling**: detect via IQR, Z-score or Modified Z-score; remove, clip or flag
+- **Schema validation**: optional pre/post pipeline validation with Pandera
+- **Diagnostic report**: detailed stats before cleaning
+- **Cleaning report**: summary of every change made during the pipeline run
+- **Export**: download the cleaned data as CSV or Excel
 
 ## Project Structure
 
@@ -80,7 +80,7 @@ Then open http://localhost:8501 in your browser.
 uv run python -m src --input data/raw.csv --output data/clean.csv
 ```
 
-The CLI accepts both CSV and Excel files for input and output — it detects the format from the file extension.
+The CLI accepts both CSV and Excel files for input and output, it detects the format from the file extension.
 
 ## Using Docker
 
@@ -109,14 +109,14 @@ docker run --rm \
 
 The pipeline applies a series of transformations in order:
 
-1. **Schema validation** — optional Pandera check before cleaning
-2. **Column normalization** — snake_case and accent removal
-3. **Type inference** — detects numeric, datetime and category columns
-4. **String stripping** — trims whitespace from text columns
-5. **Deduplication** — removes duplicate rows
-6. **Null imputation** — fills missing values using the chosen strategy
-7. **Outlier handling** — detects and treats outliers
-8. **Schema validation** — optional Pandera check after cleaning
+1. **Schema validation**: optional Pandera check before cleaning
+2. **Column normalization**: snake_case and accent removal
+3. **Type inference**: detects numeric, datetime and category columns
+4. **String stripping**: trims whitespace from text columns
+5. **Deduplication**: removes duplicate rows
+6. **Null imputation**: fills missing values using the chosen strategy
+7. **Outlier handling**: detects and treats outliers
+8. **Schema validation**: optional Pandera check after cleaning
 
 Each step can be toggled on or off through the `PipelineConfig` dataclass, either programmatically or via the CLI flags.
 
