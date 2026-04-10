@@ -12,7 +12,8 @@ RUN uv sync --frozen --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY . .
+COPY src/ src/
+COPY app.py README.md ./
 
 RUN useradd -m app
 USER app
